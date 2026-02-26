@@ -288,7 +288,8 @@ fi
 # 'openclaw update', which spawns npm without these env vars set.
 
 # Compare installed vs latest version to skip unnecessary npm install
-CURRENT_VER=$(openclaw --version 2>/dev/null || echo "")
+# Use npm list (not openclaw --version) to ensure format matches npm view
+CURRENT_VER=$(npm list -g openclaw 2>/dev/null | grep 'openclaw@' | sed 's/.*openclaw@//' | tr -d '[:space:]')
 LATEST_VER=$(npm view openclaw version 2>/dev/null || echo "")
 
 OPENCLAW_UPDATED=false
