@@ -178,8 +178,9 @@ if (!fs.existsSync('/bin/sh')) {
 // - Termux: resolv-conf package may not be installed
 // Without a valid resolv.conf, dns.lookup() fails with EAI_AGAIN errors.
 //
-// Fix: Override dns.lookup to use c-ares resolver (dns.resolve) which
-// respects dns.setServers(), then fall back to getaddrinfo.
+// Fix: Override both dns.lookup (callback) and dns.promises.lookup (promise)
+// to use c-ares resolver (dns.resolve) which respects dns.setServers(),
+// then fall back to getaddrinfo.
 
 try {
   const dns = require('dns');
@@ -200,10 +201,9 @@ try {
   // Set DNS servers for c-ares resolver
   try { dns.setServers(dnsServers); } catch {}
 
-  // Override dns.lookup to use c-ares resolver instead of getaddrinfo
+  // Override dns.lookup (callback API) to use c-ares resolver
   const _originalLookup = dns.lookup;
   dns.lookup = function lookup(hostname, options, callback) {
-    // Normalize arguments (dns.lookup has flexible signature)
     if (typeof options === 'function') {
       callback = options;
       options = {};
@@ -213,7 +213,6 @@ try {
     const wantAll = opts.all === true;
     const family = opts.family || 0;
 
-    // Use c-ares resolve (respects dns.setServers, doesn't need resolv.conf)
     const resolve = (fam, cb) => {
       const fn = fam === 6 ? dns.resolve6 : dns.resolve4;
       fn(hostname, cb);
@@ -229,16 +228,46 @@ try {
             callback(null, addresses[0], resFam);
           }
         } else if (family === 0 && fam === 4) {
-          // Try IPv6 if IPv4 failed and no family preference
           tryResolve(6);
         } else {
-          // All c-ares attempts failed, fall back to getaddrinfo
           _originalLookup.call(dns, hostname, originalOptions, callback);
         }
       });
     };
 
-    // Start with IPv4 (or requested family)
     tryResolve(family === 6 ? 6 : 4);
+  };
+
+  // Override dns.promises.lookup (promise API) to use c-ares resolver.
+  // OpenClaw's SSRF guard uses this API for web_search DNS resolution.
+  const _originalPromiseLookup = dns.promises.lookup;
+  dns.promises.lookup = async function lookup(hostname, options) {
+    const opts = typeof options === 'number' ? { family: options } : (options || {});
+    const wantAll = opts.all === true;
+    const family = opts.family || 0;
+
+    const resolve = (fam) => {
+      return new Promise((res, rej) => {
+        const fn = fam === 6 ? dns.resolve6 : dns.resolve4;
+        fn(hostname, (err, addresses) => err ? rej(err) : res(addresses));
+      });
+    };
+
+    const tryResolve = async (fam) => {
+      try {
+        const addresses = await resolve(fam);
+        if (addresses && addresses.length > 0) {
+          const resFam = fam === 6 ? 6 : 4;
+          if (wantAll) {
+            return addresses.map(a => ({ address: a, family: resFam }));
+          }
+          return { address: addresses[0], family: resFam };
+        }
+      } catch {}
+      if (family === 0 && fam === 4) return tryResolve(6);
+      return _originalPromiseLookup.call(dns.promises, hostname, options);
+    };
+
+    return tryResolve(family === 6 ? 6 : 4);
   };
 } catch {}
