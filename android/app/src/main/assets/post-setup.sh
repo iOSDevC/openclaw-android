@@ -237,7 +237,18 @@ if [ -f "$NODE_DIR/bin/node.real" ] && "$NODE_DIR/bin/node" --version &>/dev/nul
         rm -f "$NODE_DIR/bin/npm"
         cat > "$NODE_DIR/bin/npm" << NPMWRAP
 #!$PREFIX/bin/bash
-exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
+"$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
+_npm_exit=\$?
+case "\$*" in *-g*openclaw*|*--global*openclaw*|*openclaw*-g*|*openclaw*--global*)
+    _oc_bin="$PREFIX/bin/openclaw"
+    _oc_mjs="$PREFIX/lib/node_modules/openclaw/openclaw.mjs"
+    if [ -f "\$_oc_mjs" ]; then
+        printf '#!$PREFIX/bin/bash\nexec "$NODE_DIR/bin/node" "%s" "\$@"\n' "\$_oc_mjs" > "\$_oc_bin"
+        chmod +x "\$_oc_bin"
+    fi
+    ;;
+esac
+exit \$_npm_exit
 NPMWRAP
         chmod +x "$NODE_DIR/bin/npm"
     fi
@@ -309,7 +320,18 @@ WRAPPER
         rm -f "$NODE_DIR/bin/npm"
         cat > "$NODE_DIR/bin/npm" << NPMWRAP
 #!$PREFIX/bin/bash
-exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
+"$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
+_npm_exit=\$?
+case "\$*" in *-g*openclaw*|*--global*openclaw*|*openclaw*-g*|*openclaw*--global*)
+    _oc_bin="$PREFIX/bin/openclaw"
+    _oc_mjs="$PREFIX/lib/node_modules/openclaw/openclaw.mjs"
+    if [ -f "\$_oc_mjs" ]; then
+        printf '#!$PREFIX/bin/bash\nexec "$NODE_DIR/bin/node" "%s" "\$@"\n' "\$_oc_mjs" > "\$_oc_bin"
+        chmod +x "\$_oc_bin"
+    fi
+    ;;
+esac
+exit \$_npm_exit
 NPMWRAP
         chmod +x "$NODE_DIR/bin/npm"
     fi

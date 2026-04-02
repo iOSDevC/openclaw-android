@@ -173,10 +173,23 @@ echo -e "${GREEN}[OK]${NC}   node wrapper created"
 echo "Creating npm/npx wrapper scripts..."
 if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" ]; then
     rm -f "$NODE_DIR/bin/npm"
-    cat > "$NODE_DIR/bin/npm" << NPMWRAP
-#!$PREFIX/bin/bash
-exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
+    cat > "$NODE_DIR/bin/npm" << 'NPMWRAP'
+#!__PREFIX__/bin/bash
+"__NODE_DIR__/bin/node" "__NODE_DIR__/lib/node_modules/npm/bin/npm-cli.js" "$@"
+_npm_exit=$?
+# Re-patch openclaw CLI wrapper after global install/update
+case "$*" in *-g*openclaw*|*--global*openclaw*|*openclaw*-g*|*openclaw*--global*)
+    _oc_bin="__PREFIX__/bin/openclaw"
+    _oc_mjs="__PREFIX__/lib/node_modules/openclaw/openclaw.mjs"
+    if [ -f "$_oc_mjs" ]; then
+        printf '#!__PREFIX__/bin/bash\nexec "__NODE_DIR__/bin/node" "%s" "$@"\n' "$_oc_mjs" > "$_oc_bin"
+        chmod +x "$_oc_bin"
+    fi
+    ;;
+esac
+exit $_npm_exit
 NPMWRAP
+    sed -i "s|__PREFIX__|$PREFIX|g; s|__NODE_DIR__|$NODE_DIR|g" "$NODE_DIR/bin/npm"
     chmod +x "$NODE_DIR/bin/npm"
     echo -e "${GREEN}[OK]${NC}   npm wrapper created"
 fi
