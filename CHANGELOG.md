@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Fixed
 
 - Auto-repatch openclaw CLI wrapper after `npm install/update -g openclaw` — prevents `/usr/bin/env` shebang breakage on Termux ([#86](https://github.com/AidanPark/openclaw-android/issues/86))
+- Move node/npm/npx wrappers to dedicated `bin/` directory safe from npm overwrites
+- Fix missing `bin/node` wrapper creation in already-installed repair path
 
 ## [Script v1.0.15] - 2026-04-01
 
