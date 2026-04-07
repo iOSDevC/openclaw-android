@@ -169,7 +169,7 @@ cmd_backup() {
     # Build manifest.json in a temp dir, then pack everything
     local tmpdir
     tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/oa-backup.XXXXXX")
-    trap 'rm -rf "$tmpdir"' EXIT
+    trap 'rm -rf "'"$tmpdir"'"' EXIT
 
     local staging="$tmpdir/$archive_root"
     local payload_dir="$staging/payload"
@@ -308,7 +308,11 @@ cmd_restore() {
 
     echo ""
     local choice
-    read -rp "Select backup to restore [1-${#backups[@]}]: " choice < /dev/tty
+    if (echo -n "" > /dev/tty) 2>/dev/null; then
+        read -rp "Select backup to restore [1-${#backups[@]}]: " choice < /dev/tty
+    else
+        read -rp "Select backup to restore [1-${#backups[@]}]: " choice
+    fi
 
     # Validate input
     if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#backups[@]}" ]; then

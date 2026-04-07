@@ -44,7 +44,7 @@ REPO_BASE="$REPO_BASE_ORIGIN"
 
 BASHRC_MARKER_START="# >>> OpenClaw on Android >>>"
 BASHRC_MARKER_END="# <<< OpenClaw on Android <<<"
-OA_VERSION="1.0.20"
+OA_VERSION="1.0.21"
 
 # ── Platform detection ──
 # 1. Explicit marker file (new install and after first update)
@@ -82,11 +82,14 @@ validate_platform_name() {
 
 # ── User confirmation prompt ──
 # Reads from /dev/tty so it works even in curl|bash mode.
-# Termux always has /dev/tty — no fallback for tty-less environments.
 ask_yn() {
     local prompt="$1"
     local reply
-    read -rp "$prompt [Y/n] " reply < /dev/tty
+    if (echo -n "" > /dev/tty) 2>/dev/null; then
+        read -rp "$prompt [Y/n] " reply < /dev/tty
+    else
+        read -rp "$prompt [Y/n] " reply
+    fi
     [[ "${reply:-}" =~ ^[Nn]$ ]] && return 1
     return 0
 }

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Script v1.0.21] - 2026-04-07
+
+### Fixed
+
+- Fix `oa --backup` exiting with error code 1 due to `tmpdir: unbound variable` — trap used local variable that went out of scope
+- Fix `oa --backup` / `oa --restore` and `ask_yn` failing in tty-less environments (SSH pipe, non-interactive) — fallback to stdin when `/dev/tty` is unavailable
+
 ## [Script v1.0.20] - 2026-04-06
 
 ### Fixed
