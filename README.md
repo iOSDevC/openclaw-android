@@ -309,7 +309,7 @@ Each tool is offered via an individual Y/n prompt. You choose which ones to inst
 | [Playwright](https://playwright.dev/) | Browser automation library (requires Chromium). Auto-configures `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` | Custom install script |
 | [Claude Code](https://github.com/anthropics/claude-code) (Anthropic) | AI CLI tool | `npm install -g` |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) | AI CLI tool | `npm install -g` |
-| [Codex CLI](https://github.com/openai/codex) (OpenAI) | AI CLI tool | `npm install -g` |
+| [Codex CLI](https://github.com/DioNanos/codex-termux) (Termux fork of OpenAI Codex) | AI CLI tool | `npm install -g` |
 
 ## Project Structure
 

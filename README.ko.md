@@ -307,7 +307,7 @@ OpenClaw은 [node-llama-cpp](https://github.com/withcatai/node-llama-cpp)를 통
 | [Playwright](https://playwright.dev/) | 브라우저 자동화 라이브러리 (Chromium 필요). `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` 자동 설정 | 전용 설치 스크립트 |
 | [Claude Code](https://github.com/anthropics/claude-code) (Anthropic) | AI CLI 도구 | `npm install -g` |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) | AI CLI 도구 | `npm install -g` |
-| [Codex CLI](https://github.com/openai/codex) (OpenAI) | AI CLI 도구 | `npm install -g` |
+| [Codex CLI](https://github.com/DioNanos/codex-termux) (OpenAI Codex의 Termux 포크) | AI CLI 도구 | `npm install -g` |
 
 ## 프로젝트 구조
 
