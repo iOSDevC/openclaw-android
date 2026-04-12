@@ -316,7 +316,7 @@ if npm list -g @openai/codex &>/dev/null 2>&1; then
 fi
 update_ai_tool "claude" "@anthropic-ai/claude-code" "Claude Code" && AI_FOUND=true
 update_ai_tool "gemini" "@google/gemini-cli" "Gemini CLI" && AI_FOUND=true
-update_ai_tool "codex" "@mmmbuto/codex-cli-termux" "Codex CLI" && AI_FOUND=true
+update_ai_tool "codex" "@mmmbuto/codex-cli-termux" "Codex CLI (Termux)" && AI_FOUND=true
 # Create/refresh codex CLI wrapper (DioNanos fork launcher fix)
 _codex_bin="$PREFIX/bin/codex"
 _codex_pkg="$PREFIX/lib/node_modules/@mmmbuto/codex-cli-termux/bin"

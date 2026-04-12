@@ -106,7 +106,7 @@ fi
 
 echo ""
 echo -e "${BOLD}AI CLI Tools${NC}"
-for tool in "claude:Claude Code" "gemini:Gemini CLI" "codex:Codex CLI"; do
+for tool in "claude:Claude Code" "gemini:Gemini CLI" "codex:Codex CLI (Termux)"; do
     cmd="${tool%%:*}"
     label="${tool##*:}"
     if command -v "$cmd" &>/dev/null; then

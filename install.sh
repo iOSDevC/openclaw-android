@@ -51,7 +51,7 @@ if ask_yn "Install code-server (browser IDE)?"; then INSTALL_CODE_SERVER=true; f
 if ask_yn "Install OpenCode (AI coding assistant)?"; then INSTALL_OPENCODE=true; fi
 if ask_yn "Install Claude Code CLI?"; then INSTALL_CLAUDE_CODE=true; fi
 if ask_yn "Install Gemini CLI?"; then INSTALL_GEMINI_CLI=true; fi
-if ask_yn "Install Codex CLI?"; then INSTALL_CODEX_CLI=true; fi
+if ask_yn "Install Codex CLI (Termux)?"; then INSTALL_CODEX_CLI=true; fi
 
 step 4 "Core Infrastructure (L1)"
 bash "$SCRIPT_DIR/scripts/install-infra-deps.sh"

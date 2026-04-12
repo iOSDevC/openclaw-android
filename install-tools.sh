@@ -91,7 +91,7 @@ if [ "$IS_GLIBC" = true ]; then
 fi
 check_tool "Claude Code" "claude"
 check_tool "Gemini CLI" "gemini"
-check_tool "Codex CLI" "codex"
+check_tool "Codex CLI (Termux)" "codex"
 
 echo ""
 
@@ -138,7 +138,7 @@ if [ "$IS_GLIBC" = true ] && [ "${TOOL_STATUS[OpenCode]}" = "not_installed" ]; t
 fi
 if [ "${TOOL_STATUS[Claude Code]}" = "not_installed" ] && ask_yn "  Install Claude Code CLI?"; then INSTALL_CLAUDE_CODE=true; fi
 if [ "${TOOL_STATUS[Gemini CLI]}" = "not_installed" ] && ask_yn "  Install Gemini CLI?"; then INSTALL_GEMINI_CLI=true; fi
-if [ "${TOOL_STATUS[Codex CLI]}" = "not_installed" ] && ask_yn "  Install Codex CLI?"; then INSTALL_CODEX_CLI=true; fi
+if [ "${TOOL_STATUS[Codex CLI (Termux)]}" = "not_installed" ] && ask_yn "  Install Codex CLI (Termux)?"; then INSTALL_CODEX_CLI=true; fi
 
 # --- Check if anything selected ---
 ANYTHING_SELECTED=false
@@ -229,7 +229,7 @@ if [ "$INSTALL_CLAUDE_CODE" = true ]; then echo "Installing Claude Code..."; if 
 if [ "$INSTALL_GEMINI_CLI" = true ]; then echo "Installing Gemini CLI..."; if npm install -g @google/gemini-cli; then echo -e "${GREEN}[OK]${NC}   Gemini CLI installed"; fi; fi
 if [ "$INSTALL_CODEX_CLI" = true ]; then
     npm uninstall -g @openai/codex 2>/dev/null || true
-    echo "Installing Codex CLI..."
+    echo "Installing Codex CLI (Termux)..."
     if npm install -g @mmmbuto/codex-cli-termux; then
         # Create codex CLI wrapper (DioNanos fork launcher fix)
         _codex_bin="$PREFIX/bin/codex"
@@ -240,7 +240,7 @@ if [ "$INSTALL_CODEX_CLI" = true ]; then
                 "$PREFIX" "$_codex_pkg" > "$_codex_bin"
             chmod +x "$_codex_bin"
         fi
-        echo -e "${GREEN}[OK]${NC}   Codex CLI installed"
+        echo -e "${GREEN}[OK]${NC}   Codex CLI (Termux) installed"
     fi
 fi
 

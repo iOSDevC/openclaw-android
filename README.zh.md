@@ -208,7 +208,7 @@ oa --update && source ~/.bashrc
 - **OpenClaw** — 核心包（`openclaw@latest`）
 - **code-server** — 浏览器 IDE
 - **OpenCode** — AI 编程助手
-- **AI CLI 工具** — Claude Code、Gemini CLI、Codex CLI
+- **AI CLI 工具** — Claude Code、Gemini CLI、Codex CLI (Termux)
 - **Android 补丁** — 本项目的兼容性补丁
 
 已是最新的组件会被跳过。未安装的组件不会被触及——只更新设备上已有的内容。可以多次安全运行。
@@ -443,7 +443,7 @@ PLATFORM_NEEDS_BUILD_TOOLS=true
 - tmux、ttyd、dufs、android-tools
 - Chromium、Playwright
 - code-server、OpenCode
-- Claude Code、Gemini CLI、Codex CLI
+- Claude Code、Gemini CLI、Codex CLI (Termux)
 
 所有选择在安装开始前一次性完成。这样用户可以一次做完所有决定，然后在安装期间放手不管。
 
@@ -502,7 +502,7 @@ PLATFORM_NEEDS_BUILD_TOOLS=true
 - **OpenCode**：AI 编程助手，使用 proot + ld.so 拼接方式运行 Bun 独立二进制文件
 - **Chromium**：OpenClaw 的浏览器自动化支持（约 400MB）
 - **Playwright**：浏览器自动化库（通过 npm 安装 `playwright-core`）。自动设置 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` 和 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` 环境变量。如果未安装 Chromium 则自动安装
-- **AI CLI 工具**：Claude Code、Gemini CLI、Codex CLI — 通过 `npm install -g` 安装
+- **AI CLI 工具**：Claude Code、Gemini CLI、Codex CLI (Termux) — 通过 `npm install -g` 安装
 
 ### [8/8] 验证 — `tests/verify-install.sh`
 
@@ -597,7 +597,7 @@ PLATFORM_NEEDS_BUILD_TOOLS=true
 - **code-server**：以更新模式运行 `install-code-server.sh`。未安装则跳过
 - **OpenCode**：已安装则更新；未安装则提供安装选项。需要 glibc 架构
 - **Chromium**：已安装则更新。未安装则跳过
-- **AI CLI 工具**（Claude Code、Gemini CLI、Codex CLI）：比较已安装版本与最新 npm 版本，需要时更新。未安装的工具不会提供安装选项
+- **AI CLI 工具**（Claude Code、Gemini CLI、Codex CLI (Termux)）：比较已安装版本与最新 npm 版本，需要时更新。未安装的工具不会提供安装选项
 
 </details>
 

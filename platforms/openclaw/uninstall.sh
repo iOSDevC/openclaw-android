@@ -100,7 +100,7 @@ if command -v gemini &>/dev/null; then
 fi
 if command -v codex &>/dev/null; then
     AI_TOOLS_FOUND+=("@mmmbuto/codex-cli-termux")
-    AI_TOOL_LABELS+=("Codex CLI")
+    AI_TOOL_LABELS+=("Codex CLI (Termux)")
 fi
 
 if [ ${#AI_TOOLS_FOUND[@]} -eq 0 ]; then

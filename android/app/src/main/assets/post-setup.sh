@@ -721,7 +721,7 @@ PWENV
             echo -e "  ${GREEN}✓${NC} Gemini CLI"
         }
         [ "${INSTALL_CODEX_CLI:-false}" = "true" ] && {
-            echo "  Installing Codex CLI..."
+            echo "  Installing Codex CLI (Termux)..."
             npm install -g @mmmbuto/codex-cli-termux 2>&1 || true
             # Create codex CLI wrapper (DioNanos fork launcher fix)
             _codex_bin="$PREFIX/bin/codex"
@@ -732,7 +732,7 @@ PWENV
                     "$PREFIX" "$_codex_pkg" > "$_codex_bin"
                 chmod +x "$_codex_bin"
             fi
-            echo -e "  ${GREEN}✓${NC} Codex CLI"
+            echo -e "  ${GREEN}✓${NC} Codex CLI (Termux)"
         }
 
         # Fix shebangs in npm global CLIs (kept in sync with scripts/lib.sh fix_npm_global_shebangs())

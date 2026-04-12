@@ -203,7 +203,7 @@ This single command updates all installed components at once:
 - **OpenClaw** — Core package (`openclaw@latest`)
 - **code-server** — Browser IDE
 - **OpenCode** — AI coding assistant
-- **AI CLI tools** — Claude Code, Gemini CLI, Codex CLI
+- **AI CLI tools** — Claude Code, Gemini CLI, Codex CLI (Termux)
 - **Android patches** — Compatibility patches from this project
 
 Already up-to-date components are skipped. Components you haven't installed are not touched — only what's already on your device gets updated. Safe to run multiple times.
@@ -438,7 +438,7 @@ Presents 11 individual Y/n prompts (via `/dev/tty`) for optional tools:
 - tmux, ttyd, dufs, android-tools
 - Chromium, Playwright
 - code-server, OpenCode
-- Claude Code, Gemini CLI, Codex CLI
+- Claude Code, Gemini CLI, Codex CLI (Termux)
 
 All selections are collected upfront before any installation begins. This allows the user to make all decisions at once and walk away during the install.
 
@@ -497,7 +497,7 @@ Installs the tools selected in Step 3:
 - **OpenCode**: AI coding assistant using proot + ld.so concatenation for Bun standalone binaries
 - **Chromium**: Browser automation support for OpenClaw (~400MB)
 - **Playwright**: Browser automation library (`playwright-core` via npm). Auto-sets `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` and `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` environment variables. Installs Chromium automatically if not already present
-- **AI CLI tools**: Claude Code, Gemini CLI, Codex CLI — installed via `npm install -g`
+- **AI CLI tools**: Claude Code, Gemini CLI, Codex CLI (Termux) — installed via `npm install -g`
 
 ### [8/8] Verification — `tests/verify-install.sh`
 
@@ -592,7 +592,7 @@ Updates tools that are already installed:
 - **code-server**: Runs `install-code-server.sh` in update mode. Skipped if not installed
 - **OpenCode**: Updates if installed; offers to install if not. Requires glibc architecture
 - **Chromium**: Updates if installed. Skipped if not installed
-- **AI CLI tools** (Claude Code, Gemini CLI, Codex CLI): Compares installed vs latest npm version, updates if needed. Tools not installed are not offered for installation
+- **AI CLI tools** (Claude Code, Gemini CLI, Codex CLI (Termux)): Compares installed vs latest npm version, updates if needed. Tools not installed are not offered for installation
 
 </details>
 
