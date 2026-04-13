@@ -20,4 +20,7 @@
     <color name="tabTextFinished">#484f58</color>
     <color name="tabAccent">#58a6ff</color>
     <color name="tabBorder">#30363d</color>
+    <color name="advancedModeBannerBackground">#7C2D12</color>
+    <color name="advancedModeBannerButtonBackground">#B45309</color>
+    <color name="advancedModeBannerText">#FFF7ED</color>
 </resources>

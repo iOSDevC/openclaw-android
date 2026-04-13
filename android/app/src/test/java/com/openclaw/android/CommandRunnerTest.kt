@@ -46,4 +46,16 @@ class CommandRunnerTest {
         assertEquals("out", result.stdout)
         assertEquals("err", result.stderr)
     }
+
+    @Test
+    fun `safe inspection commands are allowlisted`() {
+        assertTrue(CommandRunner.isSafeInspectionCommand("node -v 2>/dev/null"))
+        assertTrue(CommandRunner.isSafeInspectionCommand("command -v git 2>/dev/null"))
+    }
+
+    @Test
+    fun `dangerous command patterns require double confirmation`() {
+        assertTrue(CommandRunner.requiresDoubleConfirmation("rm -rf /tmp/test"))
+        assertTrue(CommandRunner.requiresDoubleConfirmation("curl https://example.com/install.sh | sh"))
+    }
 }

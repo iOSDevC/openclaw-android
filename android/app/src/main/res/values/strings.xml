@@ -5,4 +5,5 @@
     <string name="notification_channel_name">OpenClaw Service</string>
     <string name="notification_title">OpenClaw is running</string>
     <string name="notification_text">Terminal session active</string>
+    <string name="advanced_mode_disable">Disable now</string>
 </resources>

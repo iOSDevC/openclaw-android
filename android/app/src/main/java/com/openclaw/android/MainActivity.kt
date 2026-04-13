@@ -1,6 +1,7 @@
 package com.openclaw.android
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -8,23 +9,34 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.webkit.ConsoleMessage
+import android.webkit.MimeTypeMap
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.openclaw.android.databinding.ActivityMainBinding
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
 import com.termux.view.TerminalViewClient
+import java.io.ByteArrayInputStream
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -43,6 +55,9 @@ class MainActivity : AppCompatActivity() {
         private const val TAB_ADD_PAD_DP = 12
         private const val INDICATOR_HEIGHT_DP = 2
         private const val INPUT_MODE_TYPE_NULL = 1
+        private const val ADVANCED_MODE_DURATION_MS = 5 * 60 * 1000L
+        private const val TRUSTED_WEB_SCHEME = "https"
+        private const val TRUSTED_WEB_HOST = "app.openclaw.local"
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -50,13 +65,38 @@ class MainActivity : AppCompatActivity() {
     lateinit var sessionManager: TerminalSessionManager
     lateinit var bootstrapManager: BootstrapManager
     lateinit var eventBridge: EventBridge
+    private lateinit var privilegeManager: PrivilegeManager
+    private lateinit var biometricHelper: BiometricHelper
     private lateinit var jsBridge: JsBridge
 
     private var currentTextSize = DEFAULT_TEXT_SIZE
     private var ctrlDown = false
     private var altDown = false
+    private var isTrustedWebContentActive = false
     private val terminalSessionClient = OpenClawSessionClient()
     private val terminalViewClient = OpenClawViewClient()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val privilegeChangeListener: (Boolean) -> Unit = { privileged ->
+        runOnUiThread {
+            if (privileged) {
+                applyPrivilegedWebViewMode(binding.webView)
+            } else {
+                applySafeWebViewDefaults(binding.webView)
+            }
+            updateAdvancedModeBanner()
+            emitPrivilegeStatus()
+        }
+    }
+    private val advancedModeTicker =
+        object : Runnable {
+            override fun run() {
+                updateAdvancedModeBanner()
+                if (privilegeManager.isPrivileged()) {
+                    emitPrivilegeStatus()
+                    mainHandler.postDelayed(this, 1_000L)
+                }
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,13 +104,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         bootstrapManager = BootstrapManager(this)
+        privilegeManager = PrivilegeManager()
+        biometricHelper = BiometricHelper(this)
         eventBridge = EventBridge(binding.webView)
         sessionManager = TerminalSessionManager(this, terminalSessionClient, eventBridge)
-        jsBridge = JsBridge(this, sessionManager, bootstrapManager, eventBridge)
+        jsBridge = JsBridge(this, sessionManager, bootstrapManager, eventBridge, privilegeManager)
+        privilegeManager.addListener(privilegeChangeListener)
 
         setupTerminalView()
         setupWebView()
         setupExtraKeys()
+        setupAdvancedModeBanner()
         sessionManager.onSessionsChanged = { updateSessionTabs() }
         startService(Intent(this, OpenClawService::class.java))
 
@@ -94,13 +138,10 @@ class MainActivity : AppCompatActivity() {
         }
         if (isInstalled) {
             showTerminal()
-            val session = sessionManager.createSession()
+            val session = createOrReuseTerminalSession()
             if (bootstrapManager.needsPostSetup()) {
                 AppLogger.i(TAG, "Running post-setup script in terminal")
-                val script = bootstrapManager.postSetupScript.absolutePath
-                binding.terminalView.post {
-                    session.write("bash $script\n")
-                }
+                runPostSetupScript(session)
             } else if (intent?.getBooleanExtra("from_boot", false) == true) {
                 val platformFile = java.io.File(bootstrapManager.homeDir, ".openclaw-android/.platform")
                 val platformId = if (platformFile.exists()) platformFile.readText().trim() else "openclaw"
@@ -111,6 +152,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // else: WebView shows setup UI, user triggers startSetup via JsBridge
+
+        applySafeWebViewDefaults(binding.webView)
+        updateAdvancedModeBanner()
     }
 
     // --- Terminal setup ---
@@ -129,29 +173,63 @@ class MainActivity : AppCompatActivity() {
         }
         binding.webView.apply {
             clearCache(true)
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.allowFileAccess = true
-            @Suppress("DEPRECATION")
-            settings.allowFileAccessFromFileURLs = true
-            @Suppress("DEPRECATION")
-            settings.allowUniversalAccessFromFileURLs = true
-            settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+            applySafeWebViewDefaults(this)
             addJavascriptInterface(jsBridge, "OpenClaw")
             webViewClient =
                 object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?,
+                        request: WebResourceRequest?,
+                    ): Boolean {
+                        val currentRequest = request ?: return false
+                        val uri = currentRequest.url
+                        if (!currentRequest.isForMainFrame) return false
+                        if (isTrustedWebUri(uri)) return false
+
+                        revokePrivilege("Advanced Mode was disabled because the app left its trusted origin.")
+                        openExternalUri(uri.toString())
+                        return true
+                    }
+
+                    override fun shouldInterceptRequest(
+                        view: WebView?,
+                        request: WebResourceRequest?,
+                    ): WebResourceResponse? {
+                        val currentRequest = request ?: return null
+                        val uri = currentRequest.url
+                        if (!isTrustedWebUri(uri)) return super.shouldInterceptRequest(view, request)
+                        return try {
+                            buildTrustedWebResponse(uri)
+                        } catch (e: SecurityException) {
+                            AppLogger.w(TAG, "Blocked trusted content request: ${e.message}")
+                            WebResourceResponse(
+                                "text/plain",
+                                "utf-8",
+                                403,
+                                "Forbidden",
+                                emptyMap(),
+                                ByteArrayInputStream(ByteArray(0)),
+                            )
+                        }
+                    }
+
                     override fun onPageFinished(
                         view: WebView?,
                         url: String?,
                     ) {
                         super.onPageFinished(view, url)
+                        val uri = url?.let(android.net.Uri::parse)
+                        isTrustedWebContentActive = uri != null && isTrustedWebUri(uri)
+                        if (!isTrustedWebContentActive) {
+                            revokePrivilege("Advanced Mode was disabled because the page origin changed.")
+                        }
                         AppLogger.i(TAG, "WebView page loaded: $url")
-                        // Page loaded successfully
+                        emitPrivilegeStatus()
                     }
                 }
             webChromeClient =
                 object : WebChromeClient() {
-                    override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
+                    override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                         consoleMessage?.let {
                             AppLogger.d("WebViewJS", "${it.sourceId()}:${it.lineNumber()} ${it.message()}")
                         }
@@ -160,20 +238,269 @@ class MainActivity : AppCompatActivity() {
                 }
         }
 
-        val wwwDir = bootstrapManager.wwwDir
-        val url =
-            if (wwwDir.resolve("index.html").exists()) {
-                "file://${wwwDir.absolutePath}/index.html"
-            } else {
-                // Load bundled fallback setup page from assets
-                "file:///android_asset/www/index.html"
-            }
+        val url = trustedWebUrl()
+        isTrustedWebContentActive = true
         AppLogger.i(TAG, "Loading WebView URL: $url")
         binding.webView.loadUrl(url)
     }
 
     fun reloadWebView() {
         binding.webView.reload()
+    }
+
+    fun isTrustedWebContentActive(): Boolean = isTrustedWebContentActive
+
+    fun getPrivilegeStatus(): Map<String, Any?> =
+        mapOf(
+            "privileged" to privilegeManager.isPrivileged(),
+            "remainingMs" to privilegeManager.remainingMs(),
+            "expiresAtEpochMs" to privilegeManager.expiresAtEpochMillis(),
+        )
+
+    fun requestAdvancedMode() {
+        runOnUiThread {
+            AlertDialog
+                .Builder(this)
+                .setTitle("Enable Advanced Mode?")
+                .setMessage(
+                    "Advanced Mode temporarily unlocks terminal command injection, command execution, " +
+                        "tool installs, and update actions for 5 minutes.\n\n" +
+                        "It automatically turns off when the timer expires, the app goes to the background, " +
+                        "or trusted WebView content changes.",
+                ).setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Continue") { _, _ ->
+                    biometricHelper.authenticateForAdvancedMode(
+                        onSuccess = {
+                            privilegeManager.grant(ADVANCED_MODE_DURATION_MS)
+                            showSecurityMessage("Advanced Mode is active for 5 minutes.")
+                        },
+                        onFailure = { message ->
+                            showSecurityMessage(message)
+                            emitPrivilegeStatus()
+                        },
+                    )
+                }.show()
+        }
+    }
+
+    fun disableAdvancedMode() {
+        revokePrivilege("Advanced Mode disabled.")
+    }
+
+    fun openSetupTerminal() {
+        runOnUiThread {
+            val session = createOrReuseTerminalSession()
+            showTerminal()
+            if (bootstrapManager.needsPostSetup()) {
+                AppLogger.i(TAG, "Launching post-setup script from setup completion flow")
+                runPostSetupScript(session)
+            }
+        }
+    }
+
+    fun confirmPrivilegedCommand(
+        command: String,
+        onApproved: () -> Unit,
+    ) {
+        if (!privilegeManager.isPrivileged()) {
+            showSecurityMessage("Enable Advanced Mode before running commands from the WebView.")
+            emitPrivilegeStatus()
+            return
+        }
+
+        runOnUiThread {
+            AlertDialog
+                .Builder(this)
+                .setTitle("Confirm command")
+                .setMessage(
+                    "Review this command before sending it to the terminal:\n\n$command\n\n" +
+                        "Commands from the WebView can modify files, install software, or exfiltrate data.",
+                ).setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Run") { _, _ ->
+                    if (CommandRunner.requiresDoubleConfirmation(command)) {
+                        showDangerousCommandConfirmation(command, onApproved)
+                    } else {
+                        onApproved()
+                    }
+                }.show()
+        }
+    }
+
+    fun showSecurityMessage(message: String) {
+        runOnUiThread {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) {
+            revokePrivilege("Advanced Mode disabled because the app went to the background.")
+        }
+    }
+
+    override fun onDestroy() {
+        privilegeManager.removeListener(privilegeChangeListener)
+        mainHandler.removeCallbacks(advancedModeTicker)
+        super.onDestroy()
+    }
+
+    private fun setupAdvancedModeBanner() {
+        binding.advancedModeDisableButton.setOnClickListener {
+            disableAdvancedMode()
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun applySafeWebViewDefaults(webView: WebView) {
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            allowFileAccess = false
+            allowContentAccess = false
+            @Suppress("DEPRECATION")
+            allowFileAccessFromFileURLs = false
+            @Suppress("DEPRECATION")
+            allowUniversalAccessFromFileURLs = false
+            javaScriptCanOpenWindowsAutomatically = false
+            setSupportMultipleWindows(false)
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            cacheMode = WebSettings.LOAD_NO_CACHE
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun applyPrivilegedWebViewMode(webView: WebView) {
+        if (!privilegeManager.isPrivileged()) {
+            applySafeWebViewDefaults(webView)
+            return
+        }
+        applySafeWebViewDefaults(webView)
+    }
+
+    private fun updateAdvancedModeBanner() {
+        if (!::privilegeManager.isInitialized || !privilegeManager.isPrivileged()) {
+            binding.advancedModeBanner.visibility = View.GONE
+            mainHandler.removeCallbacks(advancedModeTicker)
+            return
+        }
+
+        binding.advancedModeBanner.visibility = View.VISIBLE
+        binding.advancedModeBannerText.text =
+            "Advanced mode active \u00b7 expires in ${formatDuration(privilegeManager.remainingMs())}"
+        mainHandler.removeCallbacks(advancedModeTicker)
+        mainHandler.postDelayed(advancedModeTicker, 1_000L)
+    }
+
+    private fun emitPrivilegeStatus() {
+        eventBridge.emit("privilege_status", getPrivilegeStatus())
+    }
+
+    private fun revokePrivilege(message: String) {
+        val wasPrivileged = privilegeManager.isPrivileged()
+        privilegeManager.revoke()
+        if (wasPrivileged) {
+            showSecurityMessage(message)
+        }
+    }
+
+    private fun showDangerousCommandConfirmation(
+        command: String,
+        onApproved: () -> Unit,
+    ) {
+        AlertDialog
+            .Builder(this)
+            .setTitle("Confirm high-risk command")
+            .setMessage(
+                "This command matches a dangerous pattern and needs one more confirmation:\n\n$command\n\n" +
+                    "Patterns like rm, chmod, or curl | sh can permanently change the environment.",
+            ).setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton("Run anyway") { _, _ -> onApproved() }
+            .show()
+    }
+
+    private fun trustedWebUrl(): String = "$TRUSTED_WEB_SCHEME://$TRUSTED_WEB_HOST/index.html"
+
+    private fun isTrustedWebUri(uri: android.net.Uri): Boolean =
+        uri.scheme == TRUSTED_WEB_SCHEME && uri.host == TRUSTED_WEB_HOST
+
+    private fun buildTrustedWebResponse(uri: android.net.Uri): WebResourceResponse {
+        val relativePath = normalizeTrustedPath(uri.path)
+        val mimeType = mimeTypeFor(relativePath)
+        val stream = openTrustedPath(relativePath)
+        return WebResourceResponse(mimeType, "utf-8", stream)
+    }
+
+    private fun normalizeTrustedPath(path: String?): String {
+        val normalized =
+            path
+                ?.removePrefix("/")
+                ?.ifBlank { "index.html" }
+                ?: "index.html"
+        if (normalized.contains("..")) {
+            throw SecurityException("Blocked path traversal in trusted WebView request.")
+        }
+        return normalized
+    }
+
+    private fun openTrustedPath(relativePath: String): java.io.InputStream {
+        val localFile = File(bootstrapManager.wwwDir, relativePath)
+        if (bootstrapManager.wwwDir.resolve("index.html").exists()) {
+            val canonicalRoot = bootstrapManager.wwwDir.canonicalFile
+            val canonicalFile = localFile.canonicalFile
+            val allowedPrefix = canonicalRoot.path + File.separator
+            if (
+                canonicalFile.path == canonicalRoot.path ||
+                canonicalFile.path.startsWith(allowedPrefix)
+            ) {
+                if (canonicalFile.exists() && canonicalFile.isFile) {
+                    return canonicalFile.inputStream()
+                }
+            }
+        }
+
+        return try {
+            assets.open("www/$relativePath")
+        } catch (_: Exception) {
+            ByteArrayInputStream(ByteArray(0))
+        }
+    }
+
+    private fun mimeTypeFor(relativePath: String): String =
+        MimeTypeMap
+            .getSingleton()
+            .getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(relativePath))
+            ?: when {
+                relativePath.endsWith(".js") -> "text/javascript"
+                relativePath.endsWith(".css") -> "text/css"
+                relativePath.endsWith(".svg") -> "image/svg+xml"
+                relativePath.endsWith(".json") -> "application/json"
+                else -> "text/html"
+            }
+
+    private fun formatDuration(durationMs: Long): String {
+        val totalSeconds = (durationMs.coerceAtLeast(0L) / 1_000L).toInt()
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return "%d:%02d".format(minutes, seconds)
+    }
+
+    private fun openExternalUri(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+        } catch (_: ActivityNotFoundException) {
+            showSecurityMessage("No application is available to open that link.")
+        }
+    }
+
+    private fun createOrReuseTerminalSession(): TerminalSession =
+        sessionManager.activeSession ?: sessionManager.createSession()
+
+    private fun runPostSetupScript(session: TerminalSession) {
+        val script = bootstrapManager.postSetupScript.absolutePath
+        binding.terminalView.post {
+            session.write("bash $script\n")
+        }
     }
 
     // --- View switching ---

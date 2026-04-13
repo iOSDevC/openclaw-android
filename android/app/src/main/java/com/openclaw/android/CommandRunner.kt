@@ -10,11 +10,38 @@ import java.util.concurrent.TimeUnit
  * Uses Termux bootstrap environment for all commands.
  */
 object CommandRunner {
+    private val safeInspectionCommands =
+        setOf(
+            "node -v 2>/dev/null",
+            "git --version 2>/dev/null",
+            "openclaw --version 2>/dev/null",
+            "oa --version 2>/dev/null | head -1",
+            "npm list -g --depth=0 --json 2>/dev/null",
+        )
+
+    private val dangerousPatterns =
+        listOf(
+            Regex("""(^|\s)rm(\s|$)"""),
+            Regex("""(^|\s)chmod(\s|$)"""),
+            Regex("""curl\s+[^|]*\|\s*(sh|bash)\b"""),
+        )
+
     data class CommandResult(
         val exitCode: Int,
         val stdout: String,
         val stderr: String,
     )
+
+    fun isSafeInspectionCommand(command: String): Boolean {
+        val normalized = command.trim()
+        return normalized in safeInspectionCommands ||
+            Regex("""^command -v [a-zA-Z0-9._-]+ 2>/dev/null$""").matches(normalized)
+    }
+
+    fun requiresDoubleConfirmation(command: String): Boolean {
+        val normalized = command.trim()
+        return dangerousPatterns.any { pattern -> pattern.containsMatchIn(normalized) }
+    }
 
     /**
      * Run a command synchronously with timeout.

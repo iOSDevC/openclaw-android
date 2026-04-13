@@ -5,6 +5,7 @@
 
 interface OpenClawBridge {
   showTerminal(): void
+  openSetupTerminal(): void
   showWebView(): void
   createSession(): string
   switchSession(id: string): void
@@ -38,6 +39,9 @@ interface OpenClawBridge {
   getStorageInfo(): string
   clearCache(): void
   openUrl(url: string): void
+  getPrivilegeStatus(): string
+  requestAdvancedMode(): void
+  disableAdvancedMode(): void
 }
 
 declare global {

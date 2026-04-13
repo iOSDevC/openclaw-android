@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react'
+import { bridge } from '../lib/bridge'
 import { useRoute } from '../lib/router'
+import { useNativeEvent } from '../lib/useNativeEvent'
 import { t, getLocale, setLocale, availableLocales } from '../i18n'
 
 interface MenuItem {
@@ -21,10 +24,45 @@ function getMenu(): MenuItem[] {
 
 export function Settings() {
   const { navigate } = useRoute()
+  const [privilegeStatus, setPrivilegeStatus] = useState<{ privileged?: boolean; remainingMs?: number }>({})
+
+  useEffect(() => {
+    const status = bridge.callJson<{ privileged?: boolean; remainingMs?: number }>('getPrivilegeStatus')
+    if (status) setPrivilegeStatus(status)
+  }, [])
+
+  useNativeEvent('privilege_status', (data) => {
+    setPrivilegeStatus((data ?? {}) as { privileged?: boolean; remainingMs?: number })
+  })
+
+  const countdown = formatRemainingTime(privilegeStatus.remainingMs || 0)
 
   return (
     <div className="page">
       <div className="page-title" style={{ marginBottom: 24 }}>{t('settings_title')}</div>
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card-row" style={{ alignItems: 'flex-start' }}>
+          <span className="card-icon">🔐</span>
+          <div className="card-content">
+            <div className="card-label">Advanced Mode</div>
+            <div className="card-desc">
+              {privilegeStatus.privileged
+                ? `Privileged features are unlocked for ${countdown}. They turn off automatically when the app backgrounds or the timer expires.`
+                : 'Secure mode is active. Command injection, shell execution, installs, and updates stay locked until you authenticate.'}
+            </div>
+          </div>
+          {privilegeStatus.privileged ? (
+            <button className="btn btn-danger btn-small" onClick={() => bridge.call('disableAdvancedMode')}>
+              Disable
+            </button>
+          ) : (
+            <button className="btn btn-primary btn-small" onClick={() => bridge.call('requestAdvancedMode')}>
+              Enable
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Language selector */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-row">
@@ -62,4 +100,11 @@ export function Settings() {
       ))}
     </div>
   )
+}
+
+function formatRemainingTime(remainingMs: number) {
+  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
 }

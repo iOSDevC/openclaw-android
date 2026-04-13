@@ -31,10 +31,14 @@ class UrlResolver(
         return config?.bootstrap?.url ?: BuildConfig.BOOTSTRAP_URL
     }
 
+    suspend fun getBootstrapComponent(): ComponentConfig? = loadConfig()?.bootstrap
+
     suspend fun getWwwUrl(): String {
         val config = loadConfig()
         return config?.www?.url ?: BuildConfig.WWW_URL
     }
+
+    suspend fun getWwwComponent(): ComponentConfig? = loadConfig()?.www
 
     private suspend fun loadConfig(): RemoteConfig? {
         // 1. Local cache

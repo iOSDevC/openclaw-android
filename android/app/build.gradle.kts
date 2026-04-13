@@ -107,6 +107,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.biometric:biometric:1.1.0")
     implementation(libs.gson)
     // WebView + @JavascriptInterface — Android SDK built-in, no extra dependency
 

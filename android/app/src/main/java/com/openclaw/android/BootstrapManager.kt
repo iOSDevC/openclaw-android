@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
+import java.security.MessageDigest
 import java.net.URL
 import java.util.zip.ZipInputStream
 
@@ -26,6 +27,30 @@ class BootstrapManager(
         private val ELF_SIGNATURE = byteArrayOf(0x7f, 'E'.code.toByte(), 'L'.code.toByte(), 'F'.code.toByte())
         private const val SYMLINK_SEPARATOR = "←"
         private const val SYMLINK_PARTS_COUNT = 2
+
+        fun verifySha256(
+            file: File,
+            expectedSha256: String,
+        ) {
+            val normalizedExpected = expectedSha256.trim().lowercase()
+            require(normalizedExpected.isNotBlank()) { "Missing SHA-256 for downloaded file." }
+            val actual =
+                file.inputStream().use { input ->
+                    val digest = MessageDigest.getInstance("SHA-256")
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var read = input.read(buffer)
+                    while (read >= 0) {
+                        if (read > 0) {
+                            digest.update(buffer, 0, read)
+                        }
+                        read = input.read(buffer)
+                    }
+                    digest.digest().joinToString("") { byte -> "%02x".format(byte) }
+                }
+            if (actual != normalizedExpected) {
+                throw SecurityException("SHA-256 mismatch for downloaded file.")
+            }
+        }
     }
 
     val prefixDir = File(context.filesDir, "usr")
@@ -77,11 +102,17 @@ class BootstrapManager(
 
             // Step 1: Download or extract bootstrap
             onProgress(PROGRESS_PREPARING, "Preparing bootstrap...")
-            val zipStream = getBootstrapStream(onProgress)
+            val bootstrapSource = getBootstrapSource(onProgress)
 
             // Step 2: Extract bootstrap
             onProgress(PROGRESS_EXTRACTING, "Extracting bootstrap...")
-            extractBootstrap(zipStream)
+            try {
+                bootstrapSource.inputStream.use { zipStream ->
+                    extractBootstrap(zipStream)
+                }
+            } finally {
+                bootstrapSource.cleanup()
+            }
 
             // Step 3: Fix paths and configure
             onProgress(PROGRESS_CONFIGURING, "Configuring environment...")
@@ -100,17 +131,32 @@ class BootstrapManager(
 
     // --- Bootstrap source ---
 
-    private suspend fun getBootstrapStream(onProgress: (Float, String) -> Unit): InputStream {
+    private data class DownloadSource(
+        val inputStream: InputStream,
+        val cleanup: () -> Unit = {},
+    )
+
+    private suspend fun getBootstrapSource(onProgress: (Float, String) -> Unit): DownloadSource {
         // Phase 0: Try assets first
         try {
-            return context.assets.open("bootstrap-aarch64.zip")
+            return DownloadSource(context.assets.open("bootstrap-aarch64.zip"))
         } catch (_: Exception) {
             // Phase 1: Download from network
         }
 
         onProgress(PROGRESS_DOWNLOADING, "Downloading bootstrap...")
-        val url = UrlResolver(context).getBootstrapUrl()
-        return URL(url).openStream()
+        val resolver = UrlResolver(context)
+        val component = resolver.getBootstrapComponent()
+        val bootstrapUrl = component?.url ?: resolver.getBootstrapUrl()
+        val expectedSha256 = component?.sha256?.takeIf { it.isNotBlank() }
+        val zipFile = File(context.cacheDir, "bootstrap-download.zip")
+        downloadToFile(bootstrapUrl, zipFile)
+        if (expectedSha256 != null) {
+            verifySha256(zipFile, expectedSha256)
+        } else {
+            AppLogger.w(TAG, "Bootstrap SHA-256 metadata unavailable; using URL fallback without digest verification")
+        }
+        return DownloadSource(zipFile.inputStream()) { zipFile.delete() }
     }
 
     // --- Extraction ---
@@ -136,7 +182,7 @@ class BootstrapManager(
         if (entry.name == "SYMLINKS.txt") {
             processSymlinks(zip, stagingDir)
         } else if (!entry.isDirectory) {
-            val file = File(stagingDir, entry.name)
+            val file = secureZipDestination(stagingDir, entry.name)
             file.parentFile?.mkdirs()
             file.outputStream().use { out -> zip.copyTo(out) }
             markExecutableIfNeeded(file, entry.name)
@@ -191,7 +237,7 @@ class BootstrapManager(
             }.forEach { parts ->
                 val symlinkTarget = parts[0].trim().replace("com.termux", ourPackage)
                 val symlinkPath = parts[1].trim()
-                val linkFile = File(targetDir, symlinkPath)
+                val linkFile = secureZipDestination(targetDir, symlinkPath)
                 linkFile.parentFile?.mkdirs()
                 try {
                     Os.symlink(symlinkTarget, linkFile.absolutePath)
@@ -453,6 +499,33 @@ exit ${d}_rc
             AppLogger.i(TAG, "oa CLI installed at ${oaBin.absolutePath}")
         } catch (e: Exception) {
             AppLogger.w(TAG, "Failed to install oa CLI", e)
+        }
+    }
+
+    private fun secureZipDestination(
+        targetDir: File,
+        entryName: String,
+    ): File {
+        val destination = File(targetDir, entryName)
+        val canonicalTargetDir = targetDir.canonicalFile
+        val canonicalDestination = destination.canonicalFile
+        val allowedPrefix = canonicalTargetDir.path + File.separator
+        if (
+            canonicalDestination.path != canonicalTargetDir.path &&
+            !canonicalDestination.path.startsWith(allowedPrefix)
+        ) {
+            throw SecurityException("Zip entry outside target dir")
+        }
+        return canonicalDestination
+    }
+
+    private fun downloadToFile(
+        url: String,
+        targetFile: File,
+    ) {
+        targetFile.parentFile?.mkdirs()
+        URL(url).openStream().use { input ->
+            targetFile.outputStream().use { output -> input.copyTo(output) }
         }
     }
 }

@@ -250,7 +250,7 @@ export function Setup({ onComplete }: Props) {
       </div>
 
       <button className="btn btn-primary" onClick={() => {
-        bridge.call('showTerminal')
+        bridge.call('openSetupTerminal')
         onComplete()
       }}>
         {t('setup_open_terminal')}
