@@ -1,14 +1,14 @@
 # OpenClaw on Android
 
-[English](README.md) | [한국어](README.ko.md)
+[English](README.md) | [Español](README.es.md) | [한국어](README.ko.md)
 
 <img src="docs/images/openclaw_android.jpg" alt="OpenClaw on Android">
 
 ![Android 7.0+](https://img.shields.io/badge/Android-7.0%2B-brightgreen)
 ![Termux](https://img.shields.io/badge/Termux-Required-orange)
 ![No proot](https://img.shields.io/badge/proot--distro-Not%20Required-blue)
-![License MIT](https://img.shields.io/github/license/AidanPark/openclaw-android)
-![GitHub Stars](https://img.shields.io/github/stars/AidanPark/openclaw-android)
+![License MIT](https://img.shields.io/github/license/iOSDevC/openclaw-android)
+![GitHub Stars](https://img.shields.io/github/stars/iOSDevC/openclaw-android)
 
 Android 也配拥有一个 Shell。
 
@@ -64,10 +64,10 @@ Android 也配拥有一个 Shell。
 - 内置仪表盘：控制网关、查看运行状态、管理工具
 - 独立于 Termux 运行 — 安装此应用不会影响已有的 Termux + `oa` 环境
 
-前往 [Releases](https://github.com/AidanPark/openclaw-android/releases) 页面下载 APK。
+前往 [Releases](https://github.com/iOSDevC/openclaw-android/releases) 页面下载 APK。
 
 > **中国用户**：如果无法直接从 GitHub 下载，可使用镜像链接：
-> [ghfast.top 镜像下载](https://ghfast.top/https://github.com/AidanPark/openclaw-android/releases/latest/download/app-release.apk)
+> [ghfast.top 镜像下载](https://ghfast.top/https://github.com/iOSDevC/openclaw-android/releases/latest/download/app-release.apk)
 
 ## 系统要求
 
@@ -125,7 +125,7 @@ pkg update -y && pkg install -y curl
 在 Termux 中粘贴以下命令。
 
 ```bash
-curl -sL myopenclawhub.com/install | bash && source ~/.bashrc
+curl -sL https://iosdevc.github.io/openclaw-android/install | bash && source ~/.bashrc
 ```
 
 一条命令自动完成所有安装。根据网络速度和设备性能，大约需要 3-10 分钟。建议使用 Wi-Fi。
@@ -215,7 +215,7 @@ oa --update && source ~/.bashrc
 
 > 如果 `oa` 命令不可用（旧版安装），请使用 curl 运行：
 > ```bash
-> curl -sL myopenclawhub.com/update | bash && source ~/.bashrc
+> curl -sL https://iosdevc.github.io/openclaw-android/update | bash && source ~/.bashrc
 > ```
 
 ## 备份与恢复

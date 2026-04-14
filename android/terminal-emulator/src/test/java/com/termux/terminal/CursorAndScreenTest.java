@@ -62,10 +62,10 @@ public class CursorAndScreenTest extends TerminalTestCase {
 		withTerminalSized(5, 2).enterString("n\u0302ice").enterString("\033[G\033[2P").assertLinesAre("ce   ", "     ");
 		withTerminalSized(5, 2).enterString("n\u0302ice").enterString("\033[G\033[P").assertLinesAre("ice  ", "     ");
 		withTerminalSized(5, 2).enterString("n\u0302ice").enterString("\033[2G\033[2P").assertLinesAre("n\u0302e   ", "     ");
-		// With wide 枝 char, checking that putting char at part replaces other with whitespace:
+		// With a double-width character, writing to either half should replace the other half with whitespace:
 		withTerminalSized(5, 2).enterString("枝ce").enterString("\033[Ga").assertLinesAre("a ce ", "     ");
 		withTerminalSized(5, 2).enterString("枝ce").enterString("\033[2Ga").assertLinesAre(" ace ", "     ");
-		// With wide 枝 char, deleting either part replaces other with whitespace:
+		// With a double-width character, deleting either half should replace the other half with whitespace:
 		withTerminalSized(5, 2).enterString("枝ce").enterString("\033[G\033[P").assertLinesAre(" ce  ", "     ");
 		withTerminalSized(5, 2).enterString("枝ce").enterString("\033[2G\033[P").assertLinesAre(" ce  ", "     ");
 		withTerminalSized(5, 2).enterString("枝ce").enterString("\033[2G\033[2P").assertLinesAre(" e   ", "     ");
@@ -91,7 +91,7 @@ public class CursorAndScreenTest extends TerminalTestCase {
 		withTerminalSized(5, 2).enterString("nic\u0302e!\u0302").enterString("\033[4G枝").assertLinesAre("nic\u0302枝", "     ");
 		withTerminalSized(5, 2).enterString("nic枝\u0302").enterString("\033[3GA").assertLinesAre("niA枝\u0302", "     ");
 		withTerminalSized(5, 2).enterString("nic枝\u0302").enterString("\033[3GA").assertLinesAre("niA枝\u0302", "     ");
-		// With wide 枝 char.
+		// With a double-width character.
 		withTerminalSized(5, 2).enterString("nice").enterString("\033[G\033[4h枝").assertLinesAre("枝nic", "     ");
 		withTerminalSized(5, 2).enterString("nice").enterString("\033[2G\033[4h枝").assertLinesAre("n枝ic", "     ");
 		withTerminalSized(5, 2).enterString("n枝ce").enterString("\033[G\033[4ha").assertLinesAre("an枝c", "     ");

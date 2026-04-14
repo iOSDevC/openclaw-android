@@ -1,14 +1,14 @@
 # OpenClaw on Android
 
-[English](README.md) | [中文](README.zh.md)
+[English](README.md) | [Español](README.es.md) | [Chinese](README.zh.md)
 
 <img src="docs/images/openclaw_android.jpg" alt="OpenClaw on Android">
 
 ![Android 7.0+](https://img.shields.io/badge/Android-7.0%2B-brightgreen)
 ![Termux](https://img.shields.io/badge/Termux-Required-orange)
 ![No proot](https://img.shields.io/badge/proot--distro-Not%20Required-blue)
-![License MIT](https://img.shields.io/github/license/AidanPark/openclaw-android)
-![GitHub Stars](https://img.shields.io/github/stars/AidanPark/openclaw-android)
+![License MIT](https://img.shields.io/github/license/iOSDevC/openclaw-android)
+![GitHub Stars](https://img.shields.io/github/stars/iOSDevC/openclaw-android)
 
 나야, [OpenClaw](https://github.com/openclaw). 근데 이제 Android-Termux 를 곁들인...
 
@@ -64,7 +64,7 @@
 - 내장 대시보드: 게이트웨이 제어, 런타임 정보, 도구 관리
 - Termux와 독립 실행 — 앱 설치가 기존 Termux + `oa` 환경에 영향을 주지 않음
 
-[Releases](https://github.com/AidanPark/openclaw-android/releases) 페이지에서 APK를 다운로드하세요.
+[Releases](https://github.com/iOSDevC/openclaw-android/releases) 페이지에서 APK를 다운로드하세요.
 
 ## 요구사항
 
@@ -122,7 +122,7 @@ pkg update -y && pkg install -y curl
 Termux에 아래 명령어를 붙여넣으세요.
 
 ```bash
-curl -sL myopenclawhub.com/install | bash && source ~/.bashrc
+curl -sL https://iosdevc.github.io/openclaw-android/install | bash && source ~/.bashrc
 ```
 
 명령어 하나로 모든 설치가 자동으로 진행됩니다. 3~10분 정도 소요되며 (네트워크 속도와 기기 성능에 따라 다름), Wi-Fi 환경을 권장합니다.
@@ -210,7 +210,7 @@ oa --update && source ~/.bashrc
 
 > `oa` 명령어가 없는 경우 (이전 설치 사용자), curl로 실행:
 > ```bash
-> curl -sL myopenclawhub.com/update | bash && source ~/.bashrc
+> curl -sL https://iosdevc.github.io/openclaw-android/update | bash && source ~/.bashrc
 > ```
 
 ## 백업 및 복구

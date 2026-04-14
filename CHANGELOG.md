@@ -135,7 +135,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added
 
-- App: i18n support — English, Korean (한국어), Chinese (中文) with auto-detection
+- App: i18n support — English, Korean, and Chinese with auto-detection
 - App: Language selector in Settings
 - Add Chinese README (README.zh.md) with China mirror download link
 - Add language switcher links to README.md, README.ko.md, README.zh.md

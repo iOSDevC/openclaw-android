@@ -52,7 +52,7 @@ fi
 SDK_INT=$(getprop ro.build.version.sdk 2>/dev/null || echo "0")
 if [ "$SDK_INT" -ge 31 ] 2>/dev/null; then
     echo -e "${YELLOW}[INFO]${NC} Android 12+ detected — if background processes get killed (signal 9),"
-    echo "       see: https://github.com/AidanPark/openclaw-android/blob/main/docs/disable-phantom-process-killer.md"
+    echo "       see: https://github.com/iOSDevC/openclaw-android/blob/main/docs/disable-phantom-process-killer.md"
 fi
 
 echo ""

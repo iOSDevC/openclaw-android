@@ -54,7 +54,7 @@ fi
 command -v resolve_npm_registry >/dev/null 2>&1 && resolve_npm_registry || true
 
 # Define REPO_TARBALL after sourcing lib.sh to prevent old installs from overwriting it
-REPO_TARBALL="https://github.com/AidanPark/openclaw-android/archive/refs/heads/main.tar.gz"
+REPO_TARBALL="https://github.com/iOSDevC/openclaw-android/archive/refs/heads/main.tar.gz"
 
 if ! declare -f detect_platform &>/dev/null; then
     detect_platform() {
@@ -94,7 +94,7 @@ fi
 SDK_INT=$(getprop ro.build.version.sdk 2>/dev/null || echo "0")
 if [ "$SDK_INT" -ge 31 ] 2>/dev/null; then
     echo -e "${YELLOW}[INFO]${NC} Android 12+ detected — if background processes get killed (signal 9),"
-    echo "       see: https://github.com/AidanPark/openclaw-android/blob/main/docs/disable-phantom-process-killer.md"
+    echo "       see: https://github.com/iOSDevC/openclaw-android/blob/main/docs/disable-phantom-process-killer.md"
 fi
 
 step 2 "Download Latest Release (tarball)"

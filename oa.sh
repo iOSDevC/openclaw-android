@@ -17,7 +17,7 @@ else
     YELLOW='\033[1;33m'
     BOLD='\033[1m'
     NC='\033[0m'
-    REPO_BASE_ORIGIN="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+    REPO_BASE_ORIGIN="https://raw.githubusercontent.com/iOSDevC/openclaw-android/main"
     REPO_BASE="$REPO_BASE_ORIGIN"
     PLATFORM_MARKER="$PROJECT_DIR/.platform"
 

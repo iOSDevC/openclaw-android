@@ -1,14 +1,14 @@
 # OpenClaw on Android
 
-[한국어](README.ko.md) | [中文](README.zh.md)
+[Español](README.es.md) | [Korean](README.ko.md) | [Chinese](README.zh.md)
 
 <img src="docs/images/openclaw_android.jpg" alt="OpenClaw on Android">
 
 ![Android 7.0+](https://img.shields.io/badge/Android-7.0%2B-brightgreen)
 ![Termux](https://img.shields.io/badge/Termux-Required-orange)
 ![No proot](https://img.shields.io/badge/proot--distro-Not%20Required-blue)
-![License MIT](https://img.shields.io/github/license/AidanPark/openclaw-android)
-![GitHub Stars](https://img.shields.io/github/stars/AidanPark/openclaw-android)
+![License MIT](https://img.shields.io/github/license/iOSDevC/openclaw-android)
+![GitHub Stars](https://img.shields.io/github/stars/iOSDevC/openclaw-android)
 
 Because Android deserves a shell.
 
@@ -64,7 +64,7 @@ A standalone Android app is also available. It bundles a terminal emulator and a
 - Built-in dashboard for gateway control, runtime info, and tool management
 - Works independently of Termux — installing the app does not affect an existing Termux + `oa` setup
 
-Download the APK from the [Releases](https://github.com/AidanPark/openclaw-android/releases) page.
+Download the APK from the [Releases](https://github.com/iOSDevC/openclaw-android/releases) page.
 
 ## Requirements
 
@@ -122,7 +122,7 @@ pkg update -y && pkg install -y curl
 Paste the following command in Termux.
 
 ```bash
-curl -sL myopenclawhub.com/install | bash && source ~/.bashrc
+curl -sL https://iosdevc.github.io/openclaw-android/install | bash && source ~/.bashrc
 ```
 
 Everything is installed automatically with a single command. This takes 3–10 minutes depending on network speed and device. Wi-Fi is recommended.
@@ -210,7 +210,7 @@ Already up-to-date components are skipped. Components you haven't installed are 
 
 > If the `oa` command is not available (older installations), run it with curl:
 > ```bash
-> curl -sL myopenclawhub.com/update | bash && source ~/.bashrc
+> curl -sL https://iosdevc.github.io/openclaw-android/update | bash && source ~/.bashrc
 > ```
 
 ## Backup & Restore

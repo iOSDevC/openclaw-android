@@ -32,7 +32,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 # ─── GitHub mirror fallback (for China/restricted networks) ──
-REPO_BASE_ORIGIN="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+REPO_BASE_ORIGIN="https://raw.githubusercontent.com/iOSDevC/openclaw-android/main"
 REPO_BASE="$REPO_BASE_ORIGIN"
 resolve_repo_base() {
     if curl -sI --connect-timeout 3 "$REPO_BASE_ORIGIN/oa.sh" >/dev/null 2>&1; then
